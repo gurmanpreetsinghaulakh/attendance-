@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+            overflow-y: auto; /* Enable scrolling */
+        }
+        #main {
+            text-align: center;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 800px;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #004c9d;
+            color: #fff;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .dashboard {
+            display: none;
+            margin-top: 20px;
+        }
+        input{
+            padding: 10px;
+            width: 83%;
+            border-radius: 5px;
+            border: 1px solid black;
+        }
+        .task-box {
+            background-color: #e0e0e0;
+            padding: 15px;
+            margin: 10px;
+            border-radius: 5px;
+            text-align: left;
+        }
+        h2 {
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .attendance-box {
+            margin-top: 20px;
+        }
+        .logout {
+            margin-top: 20px;
+            background-color: #dc3545; /* Red for logout */
+        }
+    </style>
+</head>
+<body>
+    <div id="main">
+        <div id="role-selection">
+            <button id="admin-btn">Admin</button>
+            <button id="employee-btn">Employee</button>
+        </div>
+
+        <div id="admin-dashboard" class="dashboard">
+            <h2>Admin Dashboard</h2>
+            <button class="logout" id="logout-admin">Logout</button>
+            <div class="task-box">
+                <h3>Assign Task</h3>
+                <input type="text" id="task-input" placeholder="Enter task">
+                <button id="send-task">Send</button>
+            </div>
+            <div class="task-box">
+                <h3>Assigned Tasks</h3>
+                <ul id="assigned-tasks-admin"></ul>
+            </div>
+            <div class="task-box">
+                <h3>Ongoing Tasks</h3>
+                <ul id="ongoing-tasks-admin"></ul>
+            </div>
+            <div class="task-box">
+                <h3>Completed Tasks</h3>
+                <ul id="completed-tasks-admin"></ul>
+            </div>
+            <div class="attendance-box">
+                <h3>Mark Attendance</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Employee ID</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendance-records-admin"></tbody>
+                </table>
+                <button onclick="markAttendance('Present', 'Admin', '001')">Present</button>
+                <button onclick="markAttendance('Absent', 'Admin', '001')">Absent</button>
+            </div>
+        </div>
+
+        <div id="employee-dashboard" class="dashboard">
+            <h2>Employee Dashboard</h2>
+            <button class="logout" id="logout-employee">Logout</button>
+            <div class="task-box">
+                <h3>Assigned Tasks</h3>
+                <ul id="assigned-tasks-employee"></ul>
+            </div>
+            <div class="task-box">
+                <h3>Ongoing Tasks</h3>
+                <ul id="ongoing-tasks-employee"></ul>
+            </div>
+            <div class="task-box">
+                <h3>Completed Tasks</h3>
+                <ul id="completed-tasks-employee"></ul>
+            </div>
+            <div class="attendance-box">
+                <h3>Attendance Records</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Employee ID</th>
+                            <th>Percentage</th>
+                            <th>Days Present</th>
+                            <th>Days Absent</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendance-records-employee"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const adminBtn = document.getElementById('admin-btn');
+            const employeeBtn = document.getElementById('employee-btn');
+            const adminDashboard = document.getElementById('admin-dashboard');
+            const employeeDashboard = document.getElementById('employee-dashboard');
+            const taskInput = document.getElementById('task-input');
+            const sendTaskBtn = document.getElementById('send-task');
+            const logoutAdmin = document.getElementById('logout-admin');
+            const logoutEmployee = document.getElementById('logout-employee');
+
+            let tasks = {
+                assigned: [],
+                ongoing: [],
+                completed: [],
+            };
+
+            let attendanceRecords = {
+                admin: [],
+                employee: [],
+            };
+
+            adminBtn.addEventListener('click', () => {
+                adminDashboard.style.display = 'block';
+                employeeDashboard.style.display = 'none';
+                document.getElementById('role-selection').style.display = 'none'; // Hide options
+            });
+
+            employeeBtn.addEventListener('click', () => {
+                employeeDashboard.style.display = 'block';
+                adminDashboard.style.display = 'none';
+                document.getElementById('role-selection').style.display = 'none'; // Hide options
+                loadTasks(); 
+                loadAttendanceRecords('employee');
+            });
+
+            sendTaskBtn.addEventListener('click', () => {
+                const task = taskInput.value.trim();
+                if (task) {
+                    tasks.assigned.push(task);
+                    taskInput.value = '';
+                    loadAssignedTasks(); 
+                }
+            });
+
+            function loadAssignedTasks() {
+                const assignedTasksAdmin = document.getElementById('assigned-tasks-admin');
+                const assignedTasksEmployee = document.getElementById('assigned-tasks-employee');
+
+                assignedTasksAdmin.innerHTML = '';
+                assignedTasksEmployee.innerHTML = '';
+
+                tasks.assigned.forEach((task, index) => {
+                    assignedTasksAdmin.innerHTML += `<li>${task}</li>`;
+                    assignedTasksEmployee.innerHTML += `<li>${task} <button onclick="startTask(${index})">Start</button></li>`;
+                });
+            }
+
+            window.startTask = function(index) {
+                const taskToMove = tasks.assigned.splice(index, 1)[0];
+                tasks.ongoing.push(taskToMove);
+                loadAssignedTasks(); 
+                loadOngoingTasks();
+            };
+
+            function loadOngoingTasks() {
+                const ongoingTasksAdmin = document.getElementById('ongoing-tasks-admin');
+                const ongoingTasksEmployee = document.getElementById('ongoing-tasks-employee');
+
+                ongoingTasksAdmin.innerHTML = '';
+                ongoingTasksEmployee.innerHTML = '';
+
+                tasks.ongoing.forEach((task, index) => {
+                    ongoingTasksAdmin.innerHTML += `<li>${task}</li>`;
+                    ongoingTasksEmployee.innerHTML += `<li>${task} <button onclick="completeTask(${index})">Complete</button></li>`;
+                });
+            }
+
+            window.completeTask = function(index) {
+                const completedTask = tasks.ongoing.splice(index, 1)[0];
+                tasks.completed.push(completedTask);
+                loadOngoingTasks(); 
+                loadCompletedTasks();
+            };
+
+            function loadCompletedTasks() {
+                const completedTasksAdmin = document.getElementById('completed-tasks-admin');
+                const completedTasksEmployee = document.getElementById('completed-tasks-employee');
+
+                completedTasksAdmin.innerHTML = '';
+                completedTasksEmployee.innerHTML = '';
+
+                tasks.completed.forEach(task => {
+                    completedTasksAdmin.innerHTML += `<li>${task}</li>`;
+                    completedTasksEmployee.innerHTML += `<li>${task}</li>`;
+                });
+            }
+
+            window.markAttendance = function(status, name, empId) {
+                const attendanceRecordsAdmin = document.getElementById('attendance-records-admin');
+                const attendanceRecordsEmployee = document.getElementById('attendance-records-employee');
+
+                attendanceRecords.admin.push({ name, empId, status });
+                attendanceRecords.employee.push({ name, empId, percentage: '100%', daysPresent: 1, daysAbsent: 0 });
+
+                attendanceRecordsAdmin.innerHTML += `<tr><td>${name}</td><td>${empId}</td><td>${status}</td></tr>`;
+                loadAttendanceRecords('employee');
+            };
+
+            function loadAttendanceRecords(role) {
+                const attendanceRecordsEmployee = document.getElementById('attendance-records-employee');
+                attendanceRecordsEmployee.innerHTML = '';
+
+                attendanceRecords.employee.forEach(record => {
+                    attendanceRecordsEmployee.innerHTML += `
+                        <tr>
+                            <td>${record.name}</td>
+                            <td>${record.empId}</td>
+                            <td>${record.percentage}</td>
+                            <td>${record.daysPresent}</td>
+                            <td>${record.daysAbsent}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            logoutAdmin.addEventListener('click', () => {
+                adminDashboard.style.display = 'none';
+                employeeDashboard.style.display = 'none';
+                document.getElementById('role-selection').style.display = 'block'; // Show options
+            });
+
+            logoutEmployee.addEventListener('click', () => {
+                adminDashboard.style.display = 'none';
+                employeeDashboard.style.display = 'none';
+                document.getElementById('role-selection').style.display = 'block'; // Show options
+            });
+        });
+    </script>
+</body>
+</html>
